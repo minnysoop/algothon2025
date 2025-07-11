@@ -14,7 +14,7 @@ direction = np.zeros(nInst)
 # Represents, for each stock, if it went up or down
 current_ups = np.zeros(direction.shape, dtype=bool)
 
-threshold = 30
+threshold = 100
 streak_matrix = np.empty((threshold, 50), dtype=bool)
 
 # Days passed
@@ -45,8 +45,8 @@ def getMyPosition(prcSoFar):
         last_couple_days = transposed_streak_matrix[i]
         momentum = np.sum(last_couple_days)
 
-        max_buy = 15
-        max_sell = -10
+        max_buy = 200
+        max_sell = -180
         currentPos[i] = (momentum / threshold) * (max_buy - max_sell) + max_sell
 
     day += 1
