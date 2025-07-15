@@ -1,53 +1,54 @@
 
 import numpy as np
+import pandas as pd
 
 ##### TODO #########################################
 ### IMPLEMENT 'getMyPosition' FUNCTION #############
 ### TO RUN, RUN 'eval.py' ##########################
 
-nInst = 50 # 50 Stocks from 50 different companies
-currentPos = np.zeros(nInst)
+nInst = 50 # Number of stocks
+currentPos = np.zeros(nInst) # Where our positions will be stored
+day = 1 # Number of days
 
-# Represents the direction in which the prices are going towards
-direction = np.zeros(nInst)
-
-# Represents, for each stock, if it went up or down
-current_ups = np.zeros(direction.shape, dtype=bool)
-
-threshold = 20
-streak_matrix = np.empty((threshold, 50), dtype=bool)
-
-# Days passed
-day = 1
+prev_slope = np.zeros(nInst) # The previous slope of all 50 stocks
+slope_change_threshold = 0.01
+lookback = 30  # Number of days to lookback in order to calculate our slope
 
 def getMyPosition(prcSoFar):
-    global direction, currentPos, day, current_ups
+    global currentPos, day, prev_slope
 
-    current_day_prices = prcSoFar[:, -1]
+    # If we don't have enough days to lookback on to compute a slope
+    if prcSoFar.shape[0] < lookback:
+        # Don't trade
+        return np.zeros(nInst)
 
-    if (direction == 0).all():
-        direction = prcSoFar[:, -1]
-        day += 1
-        return currentPos
+    # Computing our positions
+    for i in range(nInst):
+        # 'lookback' number of prices for the ith stock
+        prices = prcSoFar[-lookback:, i]
 
-    current_ups = current_day_prices > direction
-    direction = current_day_prices.copy()
+        # Volatility measurement based on coefficient of variation
+        # "How much stock fluctuates relative to its average price"
+        volatility = np.std(prices) / np.mean(prices)
+        # If for the pass lookback days, it's not that volatile
+        if volatility < 0.1:
+            currentPos[i] = 0
+            continue # Probably best not to buy because not enough movement, best to just hold
 
-    if day <= threshold:
-        streak_matrix[day - 1] = current_ups
-    else:
-        streak_matrix[:-1] = streak_matrix[1:]
-        streak_matrix[-1] = current_ups
+        # Calculating EMAs (Exponential Moving Averages),
+        # which really is a type of moving average that gives more weight to the most recent data than the old ones
+        prices_series = pd.Series(prices)
+        ema = prices_series.ewm(span=lookback, adjust=False).mean()
+        slope = ema.iloc[-1] - ema.iloc[-2]
 
-    # Time to sell/buy stuff
-    transposed_streak_matrix = streak_matrix.transpose()
-    for i in range(len(currentPos)):
-        last_couple_days = transposed_streak_matrix[i]
-        momentum = np.sum(last_couple_days)
+        if slope > slope_change_threshold and prev_slope[i] <= slope_change_threshold:
+            currentPos[i] = 1
+        elif slope < -slope_change_threshold and prev_slope[i] >= -slope_change_threshold:
+            currentPos[i] = -1
+        else:
+            currentPos[i] = 0
 
-        max_buy = 50
-        max_sell = -40
-        currentPos[i] = (momentum / threshold) * (max_buy - max_sell) + max_sell
+        prev_slope[i] = slope
 
     day += 1
     return currentPos

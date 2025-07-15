@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from main import getMyPosition as getPosition
+from main_v1 import getMyPosition as getPosition
 
 nInst = 0
 nt = 0
@@ -64,7 +64,7 @@ def calcPL(prcHist, numTestDays):
 
 
 
-(meanpl, ret, plstd, sharpe, dvol) = calcPL(prcAll,250)
+(meanpl, ret, plstd, sharpe, dvol) = calcPL(prcAll,1000)
 score = meanpl - 0.1*plstd
 print ("=====")
 print ("mean(PL): %.1lf" % meanpl)
