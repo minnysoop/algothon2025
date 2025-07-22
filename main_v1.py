@@ -1,3 +1,4 @@
+# Linear Interpolation
 
 import numpy as np
 
@@ -49,6 +50,7 @@ def getMyPosition(prcSoFar):
         max_buy = 10
         max_sell = -10
 
+        # Linear Interpolation
         currentPos[i] = (momentum / threshold) * (max_buy - max_sell) + max_sell
 
     day += 1

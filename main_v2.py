@@ -1,3 +1,4 @@
+# This algorithm uses exponential moving averages and volatility measurements
 
 import numpy as np
 import pandas as pd
@@ -41,6 +42,7 @@ def getMyPosition(prcSoFar):
         ema = prices_series.ewm(span=lookback, adjust=False).mean()
         slope = ema.iloc[-1] - ema.iloc[-2]
 
+        # Logic: Buy when it goes up slightly from a down. Sell when it goes down slightly from an up
         if slope > slope_change_threshold and prev_slope[i] <= slope_change_threshold:
             currentPos[i] = 1
         elif slope < -slope_change_threshold and prev_slope[i] >= -slope_change_threshold:
