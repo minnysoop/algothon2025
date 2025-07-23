@@ -22,7 +22,7 @@ day = 1
 def getMyPosition(prcSoFar):
     global direction, currentPos, day, current_ups
 
-    current_day_prices = prcSoFar[:, -1]
+    current_day_prices = prcSoFar[:, threshold]
 
     if (direction == 0).all():
         direction = prcSoFar[:, -1]
