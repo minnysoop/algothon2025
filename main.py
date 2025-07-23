@@ -1,57 +1,73 @@
+# MS is currently working on this, no touchy
 
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 ##### TODO #########################################
 ### IMPLEMENT 'getMyPosition' FUNCTION #############
 ### TO RUN, RUN 'eval.py' ##########################
 
-nInst = 50 # 50 Stocks from 50 different companies
+nInst = 50
 currentPos = np.zeros(nInst)
-
-# Represents the direction in which the prices are going towards
-direction = np.zeros(nInst)
-
-# Represents, for each stock, if it went up or down
-current_ups = np.zeros(direction.shape, dtype=bool)
-
-threshold = 50
-streak_matrix = np.empty((threshold, 50), dtype=bool)
-
-# Days passed
+previousPos = np.zeros(nInst)
 day = 1
 
+LOOKBACK = 10
+
+# Estimates
+estimate_error = np.ones(nInst)
+current_estimate = np.zeros(nInst)
+previous_estimate = np.zeros(nInst)
+
+# Measurements
+measurement = np.zeros(nInst)
+measurement_error = np.ones(nInst)
+
+error = []
+
+def calcKalmanGain(error_est, error_mea):
+    return error_est / (error_est + error_mea)
+
+def calcNewEstimate(prev_est, kg, mea):
+    return prev_est + kg * (mea - prev_est)
+
+def calcNewError(kg, prev_error_estimate):
+    return (1 - kg) * prev_error_estimate
+
 def getMyPosition(prcSoFar):
-    global direction, currentPos, day, current_ups
+    global day, currentPos
+    global current_estimate, estimate_error, previous_estimate
+    global measurement, measurement_error
 
-    current_day_prices = prcSoFar[:, -1]
+    today_prices = prcSoFar[:, -1]
 
-    if (direction == 0).all():
-        direction = prcSoFar[:, -1]
+    # If it's the first day
+    if day % 10 == 0 or day == 1:
+        # Going to set our initial variables
+        current_estimate = today_prices
+        estimate_error = np.full(nInst, 10.0)
+        measurement = today_prices.copy()
+        measurement_error = np.full(nInst, 10.0)
         day += 1
         return currentPos
 
-    current_ups = current_day_prices > direction
-    direction = current_day_prices.copy()
+    if day < LOOKBACK:
+        day += 1
+        return currentPos
 
-    if day <= threshold:
-        streak_matrix[day - 1] = current_ups
-    else:
-        streak_matrix[:-1] = streak_matrix[1:]
-        streak_matrix[-1] = current_ups
+    latest_prices = prcSoFar[:,-LOOKBACK:]
 
-    # Time to sell/buy stuff
-    transposed_streak_matrix = streak_matrix.transpose()
+    # Set previous estimates
+    previous_estimate = current_estimate.copy()
+    # Measure today's stock prices
+    measurement = today_prices.copy()
+    for i in range(nInst):
+        kg = calcKalmanGain(estimate_error[i], measurement_error[i])
+        current_estimate[i] = calcNewEstimate(current_estimate[i], kg, measurement[i])
+        estimate_error[i] = calcNewError(kg, estimate_error[i])
+    error.append(estimate_error[0])
 
-    for i in range(len(currentPos)):
-        last_couple_days = transposed_streak_matrix[i]
-        momentum = np.sum(last_couple_days)
-
-        max_buy = 10
-        max_sell = -10
-
-        currentPos[i] = (momentum / threshold) * (max_buy - max_sell) + max_sell
 
     day += 1
     return currentPos
-
-

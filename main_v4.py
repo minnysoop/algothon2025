@@ -57,6 +57,9 @@ def getMyPosition(prcSoFar):
         current_estimate[i] = calcNewEstimate(current_estimate[i], kg, measurement[i])
         estimate_error[i] = calcNewError(kg, estimate_error[i])
 
+        signal = current_estimate[i] - today_prices[i]
+        currentPos[i] = np.clip(signal, -100, 100) * 100
+
     day += 1
     return currentPos
 

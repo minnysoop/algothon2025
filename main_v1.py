@@ -1,59 +1,111 @@
-# Linear Interpolation
+# MS is currently working on this, no touchy
 
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 ##### TODO #########################################
 ### IMPLEMENT 'getMyPosition' FUNCTION #############
 ### TO RUN, RUN 'eval.py' ##########################
 
-nInst = 50 # 50 Stocks from 50 different companies
+nInst = 50
 currentPos = np.zeros(nInst)
-
-# Represents the direction in which the prices are going towards
-direction = np.zeros(nInst)
-
-# Represents, for each stock, if it went up or down
-current_ups = np.zeros(direction.shape, dtype=bool)
-
-threshold = 50
-streak_matrix = np.empty((threshold, 50), dtype=bool)
-
-# Days passed
+previousPos = np.zeros(nInst)
 day = 1
 
+# Number of days to look back on
+LOOKBACK = 20
+# Number of stocks
+STOCKS = 50
+
+def plot_kalman_vs_price(prices, stock_id=0):
+    smoothed = kalman_filter(prices)
+    ma, upper, lower = bollinger_bands(prices)
+
+    plt.figure(figsize=(12, 5))
+    # plt.plot(prices, label="Raw Prices", color="gray", alpha=0.4)
+    plt.plot(smoothed, label="Kalman Filter", color="dodgerblue", linewidth=2)
+    plt.plot(ma, label="Bollinger MA", color="orange", linestyle='--')
+    plt.plot(upper, label="Bollinger Upper", color="green", linestyle='--', alpha=0.7)
+    plt.plot(lower, label="Bollinger Lower", color="red", linestyle='--', alpha=0.7)
+
+    plt.fill_between(range(len(prices)), lower, upper, color='lightgray', alpha=0.2)
+
+    plt.title(f"Stock {stock_id} - Kalman Filter & Bollinger Bands")
+    plt.xlabel("Day")
+    plt.ylabel("Price")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def bollinger_bands(prices, window=20, num_std=2):
+
+    rolling_mean = pd.Series(prices).rolling(window).mean()
+    rolling_std = pd.Series(prices).rolling(window).std()
+
+    upper_band = rolling_mean + (num_std * rolling_std)
+    lower_band = rolling_mean - (num_std * rolling_std)
+
+    return rolling_mean.to_numpy(), upper_band.to_numpy(), lower_band.to_numpy()
+
+
+def kalman_filter(prices, process_var=1e-5, measurement_var=0.01):
+    n = len(prices)
+    x = np.zeros(n)
+    P = np.zeros(n)
+    x[0] = prices[0]
+    P[0] = 1.0
+
+    Q = process_var
+    R = measurement_var
+
+    for t in range(1, n):
+        x_pred = x[t-1]
+        P_pred = P[t-1] + Q
+
+        K = P_pred / (P_pred + R)
+        x[t] = x_pred + K * (prices[t] - x_pred)
+        P[t] = (1 - K) * P_pred
+
+    return x
+
 def getMyPosition(prcSoFar):
-    global direction, currentPos, day, current_ups
+    global day, currentPos, previousPos
+    global STOCKS, LOOKBACK
 
-    current_day_prices = prcSoFar[:, -1]
-
-    if (direction == 0).all():
-        direction = prcSoFar[:, -1]
+    if day < LOOKBACK:
         day += 1
         return currentPos
 
-    current_ups = current_day_prices > direction
-    direction = current_day_prices.copy()
+    latest_prices = prcSoFar[:, -LOOKBACK:]
+    previousPos = currentPos.copy()
+    currentPos = np.zeros(STOCKS)
 
-    if day <= threshold:
-        streak_matrix[day - 1] = current_ups
-    else:
-        streak_matrix[:-1] = streak_matrix[1:]
-        streak_matrix[-1] = current_ups
+    for i in range(STOCKS):
+        raw_prices = latest_prices[i]
 
-    # Time to sell/buy stuff
-    transposed_streak_matrix = streak_matrix.transpose()
+        # Step 1: Apply Kalman filter to raw prices
+        smoothed_prices = kalman_filter(raw_prices)
 
-    for i in range(len(currentPos)):
-        last_couple_days = transposed_streak_matrix[i]
-        momentum = np.sum(last_couple_days)
+        # Step 2: Compute Bollinger Bands on smoothed prices
+        ma, upper, lower = bollinger_bands(smoothed_prices)
 
-        max_buy = 10
-        max_sell = -10
+        # Step 3: Use last price (most recent day)
+        current_price = smoothed_prices[-1]
 
-        # Linear Interpolation
-        currentPos[i] = (momentum / threshold) * (max_buy - max_sell) + max_sell
+        if np.isnan(lower[-1]) or np.isnan(upper[-1]):
+            continue  # Not enough data for BB calc
+
+        # Step 4: Signal logic
+        if current_price < lower[-1]:
+            currentPos[i] = 1  # BUY signal (oversold)
+        elif current_price > upper[-1]:
+            currentPos[i] = -1  # SELL signal (overbought)
+        else:
+            currentPos[i] = 0  # FLAT
+
 
     day += 1
     return currentPos
-
-
