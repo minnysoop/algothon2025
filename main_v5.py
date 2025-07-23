@@ -7,51 +7,34 @@ import pandas as pd
 ### IMPLEMENT 'getMyPosition' FUNCTION #############
 ### TO RUN, RUN 'eval.py' ##########################
 
-nInst = 50  # Number of stocks
-currentPos = np.zeros(nInst)  # Where our positions will be stored
-day = 1  # Number of days
 
-# Estimates
-estimate_error = np.ones(nInst)
-current_estimate = np.zeros(nInst)
-previous_estimate = np.zeros(nInst)
+nInst = 50
+currentPos = np.zeros(nInst)
+day = 1
 
-# Measurements
-measurement = np.zeros(nInst)
-measurement_error = np.ones(nInst)
+# Number of days to look back on
+LOOKBACK = 10
+# Number of stocks
+STOCKS = 50
 
-def calcKalmanGain(error_est, error_mea):
-    return error_est / (error_est + error_mea)
+# IN: Array of prices
+# OUT: Array with 2 elements [bool, bool]
+def calcEndBehavior(arr):
+    pass
 
-def calcNewEstimate(prev_est, kg, mea):
-    return prev_est + kg * (mea - prev_est)
+# INT: Array of prices
+# OUT: Array of positions where max (+1) and min (-1) exist
+def calcLocalMaxMin(arr):
+    pass
 
-def calcNewError(kg, prev_error_estimate):
-    return (1 - kg) * prev_error_estimate
-
+# INPUT: Stocks x Days (rows x cols)
 def getMyPosition(prcSoFar):
     global day, currentPos
-    global current_estimate, estimate_error, previous_estimate
-    global measurement, measurement_error
+    today_prices = prcSoFar[:,-LOOKBACK:]
 
-    today_prices = prcSoFar[:, -1]
+    for stock in range(STOCKS):
+        pass
 
-    if day % 10 == 0 or day == 1:
-        current_estimate = today_prices.copy()
-        estimate_error = np.full(nInst, 10.0)
-        measurement = today_prices.copy()
-        measurement_error = np.full(nInst, 10.0)
-        currentPos = np.zeros(nInst)
-        day += 1
-        return currentPos
-
-    previous_estimate = current_estimate.copy()
-
-    measurement = today_prices.copy()
-    for i in range(nInst):
-        kg = calcKalmanGain(estimate_error[i], measurement_error[i])
-        current_estimate[i] = calcNewEstimate(previous_estimate[i], kg, measurement[i])
-        estimate_error[i] = calcNewError(kg, estimate_error[i])
 
 
     day += 1
