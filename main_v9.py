@@ -46,7 +46,7 @@ def getMyPosition(prcSoFar):
         return currentPos
 
     # CALCULATE NEW EMA
-    for i in range(5):
+    for i in range(nInst):
         # Get latest prices from LOOKBACK period
         latest_prices = prcSoFar[i, -LOOKBACK:]
         current_ema = calc_ema(latest_prices, previous_emas[i])
@@ -58,7 +58,7 @@ def getMyPosition(prcSoFar):
     # Need to have calculated 3 EMAs to find derivative
     if len(ema_history) >= 3:
         # CALCULATE DERIVATIVES
-        for i in range(5):
+        for i in range(nInst):
             first_derivative = ema_history_matrix[i, -1] - ema_history_matrix[i, -2]
             current_first_deriv[i] = first_derivative
             second_derivative = ema_history_matrix[i, -1] - 2 * ema_history_matrix[i, -2] + ema_history_matrix[i, -3]
@@ -70,7 +70,7 @@ def getMyPosition(prcSoFar):
         second_derivative_matrix = np.array(second_deriv_history).T
 
         ## SIGNAL LOGIC START
-        for i in range(5):
+        for i in range(nInst):
             current_price_stock_i = prcSoFar[i, -1]
             current_ema_stock_i = ema_history_matrix[i, -1]
             current_first_deriv_stock_i = first_derivative_matrix[i, -1]
@@ -80,18 +80,31 @@ def getMyPosition(prcSoFar):
             if not np.isnan(entry_prices[i]):
                 price_change = (current_price_stock_i - entry_prices[i]) / entry_prices[i]
                 if price_change >= STOP_GAIN or price_change <= -STOP_LOSS:
-                    currentPos[i] = -25
+                    currentPos[i] = -10
                     entry_prices[i] = np.nan
                     continue
 
             if abs(current_first_deriv_stock_i) <= 0.001:
                 if current_second_deriv_stock_i >= 0.0 and np.isnan(entry_prices[i]):
-                    currentPos[i] = 25
+                    currentPos[i] = 10
                     entry_prices[i] = current_price_stock_i
                 elif current_second_deriv_stock_i < 0.0 and not np.isnan(entry_prices[i]):
-                    currentPos[i] = -25
+                    currentPos[i] = -10
                     entry_prices[i] = np.nan
         ## SIGNAL LOGIC ENDS
+
+        target_dollar_exposure = 1000
+        for i in range(nInst):
+            price_i = prcSoFar[i, -1]  # current price for stock i
+
+            # Avoid division by zero or invalid prices
+            if price_i > 0:
+                # Scale currentPos[i] so that the dollar exposure matches target_dollar_exposure * signal sign
+                # Assuming currentPos[i] is +10 or -10 as signal strength, normalize to +/- target_dollar_exposure
+                currentPos[i] = np.sign(currentPos[i]) * (target_dollar_exposure / price_i)
+            else:
+                # If price invalid, zero the position
+                currentPos[i] = 0
 
     day += 1
     return currentPos

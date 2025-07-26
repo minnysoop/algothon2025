@@ -15,8 +15,6 @@ day = 1  # Number of days
 estimate_error = np.ones(nInst)
 current_estimate = np.zeros(nInst)
 previous_estimate = np.zeros(nInst)
-
-# Measurements
 measurement = np.zeros(nInst)
 measurement_error = np.ones(nInst)
 
