@@ -1,4 +1,9 @@
-# MS is currently working on this, no touchy
+# mean(PL): -0.1
+# return: -0.00056
+# StdDev(PL): 0.78
+# annSharpe(PL): -1.02
+# totDvolume: 134259
+# Score: -0.13
 
 import numpy as np
 import pandas as pd

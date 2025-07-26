@@ -1,4 +1,9 @@
-# Kalman Filter template
+# mean(PL): -15.7
+# return: -0.00063
+# StdDev(PL): 607.63
+# annSharpe(PL): -0.41
+# totDvolume: 37522493
+# Score: -76.44
 
 import numpy as np
 import pandas as pd

@@ -1,3 +1,10 @@
+# mean(PL): 2.0
+# return: 0.00193
+# StdDev(PL): 65.81
+# annSharpe(PL): 0.47
+# totDvolume: 1525077
+# Score: -4.62
+
 import numpy as np
 import pandas as pd
 

@@ -1,4 +1,9 @@
-# This algorithm uses exponential moving averages and volatility measurements
+# mean(PL): -0.1
+# return: -0.00061
+# StdDev(PL): 0.84
+# annSharpe(PL): -2.11
+# totDvolume: 274131
+# Score: -0.20
 
 import numpy as np
 import pandas as pd

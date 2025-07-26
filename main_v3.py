@@ -1,4 +1,9 @@
-# This algorithm is just for jokes
+# mean(PL): -0.0
+# return: -0.00061
+# StdDev(PL): 1.81
+# annSharpe(PL): -0.27
+# totDvolume: 95757
+# Score: -0.21
 
 
 import numpy as np
