@@ -1,4 +1,9 @@
-# A WORK IN PROGRESS
+# mean(PL): 0.1
+# return: 0.00056
+# StdDev(PL): 4.88
+# annSharpe(PL): 0.25
+# totDvolume: 207318
+# Score: -0.41
 
 import numpy as np
 import pandas as pd
