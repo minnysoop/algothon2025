@@ -1,3 +1,10 @@
+# mean(PL): 0.1
+# return: 0.00068
+# StdDev(PL): 4.64
+# annSharpe(PL): 0.32
+# totDvolume: 209682
+# Score: -0.37
+
 import numpy as np
 import pandas as pd
 
@@ -11,8 +18,8 @@ entry_prices = np.full(nInst, np.nan)
 
 # PROGRAM ADJUSTERS
 LOOKBACK = 10
-STOP_LOSS = 0.03
-STOP_GAIN = 0.01
+STOP_LOSS = 0.02
+STOP_GAIN = 0.02
 
 # VARIABLES FOR EMA
 previous_emas = [None]*nInst
@@ -39,17 +46,6 @@ def isIncreasing(prices):
         if prices[i] > prices[i-1]:
             return False
     return True
-
-# Utility function that counts number of inflection points
-def inflection_points(ddx):
-    count = 0
-    for i in range(1, len(ddx)):
-        prev = ddx[i - 1]
-        curr = ddx[i]
-        min_change = 0.001
-        if np.sign(prev) != np.sign(curr) and abs(prev - curr) > min_change:
-            count += 1
-    return count
 
 def getMyPosition(prcSoFar):
     # prcSoFar holds all prices up for all nInst instruments to the current day
@@ -93,40 +89,25 @@ def getMyPosition(prcSoFar):
             current_ema_stock_i = ema_history_matrix[i, -1]
             current_first_deriv_stock_i = first_derivative_matrix[i, -1]
             current_second_deriv_stock_i = second_derivative_matrix[i, -1]
-            past_second_deriv_stock_i = second_derivative_matrix[i, -20:]
+            past_second_deriv_stock_i = second_derivative_matrix[i, -7:]
             past_first_deriv_stock_i = first_derivative_matrix[i, -7:]
 
             ## STOP LOSS / STOP GAIN LOGIC
-            # if not np.isnan(entry_prices[i]):
-            #     price_change = (current_price_stock_i - entry_prices[i]) / entry_prices[i]
-            #     if price_change >= STOP_GAIN or price_change <= -STOP_LOSS:
-            #         currentPos[i] = 0
-            #         entry_prices[i] = np.nan
-            #         continue
-
-            inflpoints = inflection_points(past_second_deriv_stock_i)
-            if inflpoints > 10:
-                currentPos[i] = 0
-                entry_prices[i] = np.nan
-                continue
+            if not np.isnan(entry_prices[i]):
+                price_change = (current_price_stock_i - entry_prices[i]) / entry_prices[i]
+                if price_change >= STOP_GAIN or price_change <= -STOP_LOSS:
+                    currentPos[i] = 0
+                    entry_prices[i] = np.nan
+                    continue
 
             # ENTRY SIGNALS
-            target_dollar_per_stock = 10000
             if abs(current_first_deriv_stock_i) <= 0.001:
-                if isIncreasing(past_second_deriv_stock_i) and current_second_deriv_stock_i > 0:
-                    currentPos[i] = target_dollar_per_stock/current_price_stock_i
+                if isIncreasing(past_second_deriv_stock_i) and current_second_deriv_stock_i > 0.0:
+                    currentPos[i] = 15
                     entry_prices[i] = current_price_stock_i
-                elif not isIncreasing(past_second_deriv_stock_i) and current_second_deriv_stock_i < 0:
-                    currentPos[i] = -target_dollar_per_stock/current_price_stock_i
+                elif not isIncreasing(past_second_deriv_stock_i) and current_second_deriv_stock_i < 0.0:
+                    currentPos[i] = -10
                     entry_prices[i] = current_price_stock_i
-                elif currentPos[i] > 0 and current_first_deriv_stock_i < 0:
-                    currentPos[i] = 0
-                    entry_prices[i] = np.nan
-                    continue
-                elif currentPos[i] < 0 and current_first_deriv_stock_i > 0:
-                    currentPos[i] = 0
-                    entry_prices[i] = np.nan
-                    continue
 
         ## SIGNAL LOGIC ENDS
 

@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 # PROVIDED VARIABLES
 nInst = 50  # Number of available instruments
@@ -90,19 +89,9 @@ def getMyPosition(prcSoFar):
         ## SIGNAL LOGIC START
         for i in range(nInst):
             current_price_stock_i = prcSoFar[i, -1]
-            current_ema_stock_i = ema_history_matrix[i, -1]
             current_first_deriv_stock_i = first_derivative_matrix[i, -1]
             current_second_deriv_stock_i = second_derivative_matrix[i, -1]
             past_second_deriv_stock_i = second_derivative_matrix[i, -20:]
-            past_first_deriv_stock_i = first_derivative_matrix[i, -7:]
-
-            ## STOP LOSS / STOP GAIN LOGIC
-            # if not np.isnan(entry_prices[i]):
-            #     price_change = (current_price_stock_i - entry_prices[i]) / entry_prices[i]
-            #     if price_change >= STOP_GAIN or price_change <= -STOP_LOSS:
-            #         currentPos[i] = 0
-            #         entry_prices[i] = np.nan
-            #         continue
 
             inflpoints = inflection_points(past_second_deriv_stock_i)
             if inflpoints > 10:
