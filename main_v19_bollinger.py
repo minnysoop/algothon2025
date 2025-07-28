@@ -1,10 +1,3 @@
-# mean(PL): 8.9
-# return: 0.00449
-# StdDev(PL): 134.52
-# annSharpe(PL): 1.04
-# totDvolume: 2972833
-# Score: -4.55
-
 import numpy as np
 
 # PROVIDED VARIABLES
@@ -12,13 +5,8 @@ nInst = 50  # Number of available instruments
 currentPos = np.zeros(nInst)  # Positions per day
 day = 1  # Number of days
 
-# EXTRA VARIABLES
-entry_prices = np.full(nInst, np.nan)
-
 # PROGRAM ADJUSTERS
 LOOKBACK = 10
-STOP_LOSS = 0.03
-STOP_GAIN = 0.01
 
 # VARIABLES FOR EMA
 previous_emas = [None]*nInst
@@ -39,12 +27,17 @@ def calc_ema(prices, prev_ema=None):
     else:
         return SMOOTHING_FACTOR * prices[-1] + (1 - SMOOTHING_FACTOR) * prev_ema
 
+# Calculates the upper and lower bollinger bands
+def bollinger_bands(prices, ema, k=1.5):
+    global LOOKBACK
+    std = np.std(prices[-LOOKBACK:])
+    upper = ema + k * std
+    lower = ema - k * std
+    return lower, upper
+
 # Utility function that checks if an array is increasing
 def isIncreasing(prices):
-    for i in range(1, len(prices)):
-        if prices[i] > prices[i-1]:
-            return False
-    return True
+    return all(prices[i] > prices[i-1] for i in range(1, len(prices)))
 
 # Utility function that counts number of inflection points
 def inflection_points(ddx):
@@ -59,8 +52,8 @@ def inflection_points(ddx):
 
 def getMyPosition(prcSoFar):
     # prcSoFar holds all prices up for all nInst instruments to the current day
-    global day, currentPos, entry_prices
-    global LOOKBACK, STOP_GAIN, STOP_LOSS
+    global day, currentPos
+    global LOOKBACK
     global ema_history, previous_emas
     global current_first_deriv, current_second_deriv, first_deriv_history, second_deriv_history
 
@@ -96,14 +89,19 @@ def getMyPosition(prcSoFar):
         ## SIGNAL LOGIC START
         for i in range(nInst):
             current_price_stock_i = prcSoFar[i, -1]
+            current_ema_stock_i = ema_history_matrix[i, -1]
             current_first_deriv_stock_i = first_derivative_matrix[i, -1]
             current_second_deriv_stock_i = second_derivative_matrix[i, -1]
             past_second_deriv_stock_i = second_derivative_matrix[i, -20:]
+            # past_first_deriv_stock_i = first_derivative_matrix[i, -7:]
+
+            upper_band, lower_band = bollinger_bands(prcSoFar[i, :], current_ema_stock_i)
+            if current_price_stock_i > lower_band + 0.01 or current_price_stock_i < upper_band - 0.01:
+                continue
 
             inflpoints = inflection_points(past_second_deriv_stock_i)
             if inflpoints > 10:
                 currentPos[i] = 0
-                entry_prices[i] = np.nan
                 continue
 
             # ENTRY SIGNALS
@@ -111,17 +109,13 @@ def getMyPosition(prcSoFar):
             if abs(current_first_deriv_stock_i) <= 0.001:
                 if isIncreasing(past_second_deriv_stock_i) and current_second_deriv_stock_i > 0:
                     currentPos[i] = target_dollar_per_stock/current_price_stock_i
-                    entry_prices[i] = current_price_stock_i
                 elif not isIncreasing(past_second_deriv_stock_i) and current_second_deriv_stock_i < 0:
                     currentPos[i] = -target_dollar_per_stock/current_price_stock_i
-                    entry_prices[i] = current_price_stock_i
                 elif currentPos[i] > 0 and current_first_deriv_stock_i < 0:
                     currentPos[i] = 0
-                    entry_prices[i] = np.nan
                     continue
                 elif currentPos[i] < 0 and current_first_deriv_stock_i > 0:
                     currentPos[i] = 0
-                    entry_prices[i] = np.nan
                     continue
 
         ## SIGNAL LOGIC ENDS

@@ -1,10 +1,3 @@
-# mean(PL): 8.9
-# return: 0.00449
-# StdDev(PL): 134.52
-# annSharpe(PL): 1.04
-# totDvolume: 2972833
-# Score: -4.55
-
 import numpy as np
 
 # PROVIDED VARIABLES
@@ -17,8 +10,6 @@ entry_prices = np.full(nInst, np.nan)
 
 # PROGRAM ADJUSTERS
 LOOKBACK = 10
-STOP_LOSS = 0.03
-STOP_GAIN = 0.01
 
 # VARIABLES FOR EMA
 previous_emas = [None]*nInst
@@ -30,6 +21,7 @@ current_first_deriv = np.zeros(nInst)
 current_second_deriv = np.zeros(nInst)
 first_deriv_history = []
 second_deriv_history = []
+WINDOW = 20
 
 # Calculates EMA for a single stock
 def calc_ema(prices, prev_ema=None):
@@ -60,7 +52,7 @@ def inflection_points(ddx):
 def getMyPosition(prcSoFar):
     # prcSoFar holds all prices up for all nInst instruments to the current day
     global day, currentPos, entry_prices
-    global LOOKBACK, STOP_GAIN, STOP_LOSS
+    global LOOKBACK, STOP_GAIN, STOP_LOSS, WINDOW
     global ema_history, previous_emas
     global current_first_deriv, current_second_deriv, first_deriv_history, second_deriv_history
 
@@ -98,16 +90,16 @@ def getMyPosition(prcSoFar):
             current_price_stock_i = prcSoFar[i, -1]
             current_first_deriv_stock_i = first_derivative_matrix[i, -1]
             current_second_deriv_stock_i = second_derivative_matrix[i, -1]
-            past_second_deriv_stock_i = second_derivative_matrix[i, -20:]
+            past_second_deriv_stock_i = second_derivative_matrix[i, -WINDOW:]
 
             inflpoints = inflection_points(past_second_deriv_stock_i)
-            if inflpoints > 10:
+            if inflpoints > WINDOW/2:
                 currentPos[i] = 0
                 entry_prices[i] = np.nan
                 continue
 
             # ENTRY SIGNALS
-            target_dollar_per_stock = 10000
+            target_dollar_per_stock = 5000
             if abs(current_first_deriv_stock_i) <= 0.001:
                 if isIncreasing(past_second_deriv_stock_i) and current_second_deriv_stock_i > 0:
                     currentPos[i] = target_dollar_per_stock/current_price_stock_i
