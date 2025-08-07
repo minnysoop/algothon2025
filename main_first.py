@@ -1,4 +1,3 @@
-# IGNORE THIS
 
 import numpy as np
 
@@ -24,7 +23,7 @@ day = 1
 def getMyPosition(prcSoFar):
     global direction, currentPos, day, current_ups
 
-    current_day_prices = prcSoFar[:, -threshold:]
+    current_day_prices = prcSoFar[:, -1]
 
     if (direction == 0).all():
         direction = prcSoFar[:, -1]
@@ -54,7 +53,5 @@ def getMyPosition(prcSoFar):
 
     day += 1
     return currentPos
-
-
 
 
