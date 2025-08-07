@@ -11,4 +11,4 @@ We were tasked to develop a computer program that places trades on syntehtic dat
 For the general round, we submitted a simple turtle trading strategy. This was enough to get us into the finals. For the final round, we implemented a strategy that takes the first and second derivatives of the exponential moving averages across a 10-day period of previous price data and traded based on direction and momentum.
 
 ### Result
-Finalists :)
+Finalists (Placed top 12 among 250+ teams)
